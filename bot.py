@@ -106,7 +106,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.pop('step', None)
 
 # تشغيل Application
-app_bot = Application.builder().token(BOT_TOKEN).build()
+app_bot = Application.builder().token("8388967054:AAGtPxQFGGPRGJzdnGyBSzNrF6DDSZlsJeA").build()
 app_bot.add_handler(CommandHandler("start", start))
 app_bot.add_handler(CallbackQueryHandler(button_handler))
 app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
