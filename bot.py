@@ -2,18 +2,20 @@ import json
 import requests
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, ContextTypes, filters
 from fastapi import FastAPI, Request
 import uvicorn
+import os
+import asyncio
 
 # -------------------------
 # الإعدادات
 # -------------------------
 BOT_TOKEN = "8388967054:AAGtPxQFGGPRGJzdnGyBSzNrF6DDSZlsJeA"
 API_KEY = "5be3e6f7ef37395377151dba9cdbd552"
-CHANNEL_ID = "@Qd3Qd"
+CHANNEL_ID = "@Qd3Qd"   # ضع معرف قناتك هنا
 SERVICE_ID = 9183
-DEFAULT_VIEWS = 300
+DEFAULT_VIEWS = 280
 COOLDOWN_HOURS = 2
 ADMIN_ID = 5581457665
 API_URL = "https://kd1s.com/api/v2"
@@ -53,12 +55,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         users[user_id] = {"last_time": None}
         save_users()
 
-        # إشعار المالك
-        msg = f"""تم دخول نفـرر جديد إلى بوتك  😎
+        msg = f"""😂📢 بطل جديد دخل بوتك
 -----------------------
-• الاسم🤯: {user.full_name}
-• معرف🦾: @{user.username if user.username else 'لا يوجد'}
-• الايدي🆔: {user.id}
+• الاسم: {user.full_name}
+• معرف: @{user.username if user.username else 'لا يوجد'}
+• الايدي: {user.id}
 -----------------------
 • عدد مشتركينك الأبطال: {len(users)}
 """
@@ -67,12 +68,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("🔼 زيادة المشاهدات", callback_data="increase")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        f"أهلاً {user.full_name}! 👋\n حبيبي البوت مختص لزيادة تفاعل قناتك ومجانا↗: {CHANNEL_ID}",
+        f"أهلاً {user.full_name}! 👋\n   حبيبي في بوت زيادة تفاعل قناتك <مجانا>: {CHANNEL_ID}",
         reply_markup=reply_markup
     )
 
 # -------------------------
-# التعامل مع الأزرار
+# الأزرار
 # -------------------------
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -80,7 +81,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(query.from_user.id)
 
     if not await is_subscribed(context.bot, user_id):
-        await query.edit_message_text(f"⚠️ اشتـرك حبيبي، وأرسل /start : {CHANNEL_ID}")
+        await query.edit_message_text(f"⚠️ اشترك حبيبي، وأرسل /start : {CHANNEL_ID}")
         return
 
     last_time = users.get(user_id, {}).get("last_time")
@@ -89,15 +90,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if datetime.now() < last_time_dt + timedelta(hours=COOLDOWN_HOURS):
             remaining = (last_time_dt + timedelta(hours=COOLDOWN_HOURS)) - datetime.now()
             await query.edit_message_text(
-                f"😑⏳ يمكنك إعادة الطلب بعد {remaining.seconds//3600} ساعة و {(remaining.seconds%3600)//60} دقيقة."
+                f"😑⏳ تگدر تعيد الطلب بعد {remaining.seconds//3600} ساعة و {(remaining.seconds%3600)//60} دقيقة."
             )
             return
 
-    await query.edit_message_text("💎✍️ أرسل رابط منشـورك الجميل:")
+    await query.edit_message_text("💙✍️ أرسل رابط منشورك الجميل حتى أزيد مشاهداته:")
     context.user_data['step'] = "link"
 
 # -------------------------
-# استقبال رابط المنشور
+# استقبال الرابط
 # -------------------------
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -118,27 +119,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = r.json()
         if "order" in res:
             await update.message.reply_text(
-                f"😂✅ تم زيادة {DEFAULT_VIEWS} مشاهدة للمنشور!\nرقم الطلب🆔: {res['order']}"
+                f"😂✅ تم زيادة {DEFAULT_VIEWS} مشاهدة للمنشور!\nرقم👍 الطلب: {res['order']}"
             )
             users[user_id]["last_time"] = datetime.now().isoformat()
             save_users()
         else:
-            await update.message.reply_text(f"❌❗️ فشل في زيادة المشاهدات.\nالرد: {res}")
+            await update.message.reply_text(f"❗️❌ فشل بالزيادة.\nالرد: {res}")
     except Exception as e:
-        await update.message.reply_text(f"!❌ خطأ: {e}")
+        await update.message.reply_text(f"❌! خطأ: {e}")
 
     context.user_data.pop('step', None)
 
 # -------------------------
-# إعداد البوت مع Webhook
+# Telegram Application
 # -------------------------
-app_bot = ApplicationBuilder().token(BOT_TOKEN).build()
+app_bot = Application.builder().token(BOT_TOKEN).build()
 app_bot.add_handler(CommandHandler("start", start))
 app_bot.add_handler(CallbackQueryHandler(button_handler))
 app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
 # -------------------------
-# FastAPI للـ Webhook
+# FastAPI Webhook
 # -------------------------
 web_app = FastAPI()
 
@@ -154,17 +155,10 @@ def home():
     return {"status": "ok", "bot": "running"}
 
 # -------------------------
-# تشغيل Uvicorn
+# تشغيل Uvicorn + تعيين Webhook
 # -------------------------
 if __name__ == "__main__":
-    # قبل أي شيء، نسجل Webhook عند رفع البوت
-    import asyncio
-    import telegram
-    bot = telegram.Bot(BOT_TOKEN)
-    import os
-    URL = os.environ.get("RENDER_EXTERNAL_URL")  # Render يعطي هذا الرابط
-    if URL:
-        webhook_url = f"{URL}{WEBHOOK_PATH}"
-        asyncio.run(bot.set_webhook(webhook_url))
-
+    URL = os.environ.get("RENDER_EXTERNAL_URL", "https://senbotnew.onrender.com")
+    webhook_url = f"{URL}{WEBHOOK_PATH}"
+    asyncio.run(app_bot.bot.set_webhook(webhook_url))
     uvicorn.run(web_app, host="0.0.0.0", port=10000)
