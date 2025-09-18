@@ -1,4 +1,1 @@
 python-telegram-bot>=20.5,<21.0
-requests
-fastapi
-uvicorn
