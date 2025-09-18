@@ -5,14 +5,14 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, ContextTypes, filters
 import os
 
+# إعدادات البوت
 BOT_TOKEN = "8388967054:AAGtPxQFGGPRGJzdnGyBSzNrF6DDSZlsJeA"
-CHANNEL_ID = "@Qd3Qd"  # ضع معرف قناتك
+CHANNEL_ID = "@Qd3Qd"  # ضع معرف القناة هنا
 SERVICE_ID = 9183
 API_KEY = "5be3e6f7ef37395377151dba9cdbd552"
-DEFAULT_VIEWS = 250
+DEFAULT_VIEWS = 300
 COOLDOWN_HOURS = 2
 ADMIN_ID = 5581457665
-
 WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
 
 # تحميل المستخدمين
@@ -43,12 +43,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         users[user_id] = {"last_time": None}
         save_users()
         # اشعار للمالك
-        msg = f"📢 نفرر جديد:\nالاسم: {user.full_name}\nالايدي: {user.id}\n@{user.username if user.username else 'لا يوجد'}"
+        msg = f"😎📢 نفرر جديد:\nالاسم: {user.full_name}\nالايدي: {user.id}\n@{user.username if user.username else 'لا يوجد'}"
         await context.bot.send_message(chat_id=ADMIN_ID, text=msg)
     
     keyboard = [[InlineKeyboardButton("🔼 زيادة المشاهدات", callback_data="increase")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(f"أهلاً {user.full_name}! اشترك 💁: {CHANNEL_ID} حبيبي البوت مجاني لزيادة تفاعل قنواتك.", reply_markup=reply_markup)
+    await update.message.reply_text(
+        f"أهلاً {user.full_name}!: {CHANNEL_ID}  حبيبي البوت مخصص لزيادة تفاعل قناتك .", 
+        reply_markup=reply_markup
+    )
 
 # الأزرار
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -57,7 +60,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(query.from_user.id)
 
     if not await is_subscribed(context.bot, user_id):
-        await query.edit_message_text(f"⚠️ اشترك وارسل /start : {CHANNEL_ID}")
+        await query.edit_message_text(f"⚠️ حبيبي اشترك وأرسل /start : {CHANNEL_ID}")
         return
 
     last_time = users.get(user_id,{}).get("last_time")
@@ -65,17 +68,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         last_time_dt = datetime.fromisoformat(last_time)
         if datetime.now() < last_time_dt + timedelta(hours=COOLDOWN_HOURS):
             remaining = (last_time_dt + timedelta(hours=COOLDOWN_HOURS)) - datetime.now()
-            await query.edit_message_text(f"😂⏳ تعيد الطلب بعد {remaining.seconds//3600} ساعة و {(remaining.seconds%3600)//60} دقيقة.")
+            await query.edit_message_text(
+                f"😑⏳ تعيد الطلب بعد {remaining.seconds//3600} ساعة و {(remaining.seconds%3600)//60} دقيقة."
+            )
             return
 
-    await query.edit_message_text("✍️💙 أرسل رابط منشورك الجميل:")
+    await query.edit_message_text("💙✍️ أرسل رابط منشورك الجميل:")
     context.user_data['step'] = "link"
 
 # استقبال الرابط وزيادة المشاهدات
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     step = context.user_data.get('step')
-    if step != "link": return
+    if step != "link": 
+        return
     link = update.message.text
 
     data = {
@@ -89,13 +95,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         r = requests.post("https://kd1s.com/api/v2", data=data)
         res = r.json()
         if "order" in res:
-            await update.message.reply_text(f"👍✅ تم زيادة {DEFAULT_VIEWS} مشاهدة!\nرقم الطلب👍 : {res['order']}")
+            await update.message.reply_text(f"😂✅ تم زيادة {DEFAULT_VIEWS} مشاهدة!\nرقم الطلب🆔: {res['order']}")
             users[user_id]["last_time"] = datetime.now().isoformat()
             save_users()
         else:
-            await update.message.reply_text(f"❌ فشل بالزيادة.\nالرد: {res}")
+            await update.message.reply_text(f"!❌ فشل بالزيادة.\nالرد: {res}")
     except Exception as e:
-        await update.message.reply_text(f"❌ خطأ: {e}")
+        await update.message.reply_text(f"!❌ خطأ: {e}")
 
     context.user_data.pop('step', None)
 
