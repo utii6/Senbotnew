@@ -2,12 +2,15 @@ import json
 import requests
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import (
+    Application, CommandHandler, CallbackQueryHandler,
+    MessageHandler, ContextTypes, filters
+)
 import os
 
 # إعدادات البوت
 BOT_TOKEN = "8388967054:AAGtPxQFGGPRGJzdnGyBSzNrF6DDSZlsJeA"
-CHANNEL_ID = "@qd3qd"  # غيّرها لمعرف قناتك
+CHANNEL_ID = "@Qd3Qd"   # عدلها على قناتك
 SERVICE_ID = 9183
 API_KEY = "5be3e6f7ef37395377151dba9cdbd552"
 DEFAULT_VIEWS = 250
@@ -41,13 +44,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id not in users:
         users[user_id] = {"last_time": None}
         save_users()
-        msg = f"📢 😂مستخدم جديد:\nالاسم: {user.full_name}\nالايدي: {user.id}\n@{user.username if user.username else 'لا يوجد'}"
+        msg = f"📢 مستخدم جديد:\nالاسم: {user.full_name}\nالايدي: {user.id}\n@{user.username if user.username else 'لا يوجد'}"
         await context.bot.send_message(chat_id=ADMIN_ID, text=msg)
 
     keyboard = [[InlineKeyboardButton("🔼 زيادة المشاهدات", callback_data="increase")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        f"أهلاً {user.full_name}! لازم تشترك بالقناة: {CHANNEL_ID} قبل أي زيادة.",
+        f"أهلاً {user.full_name}! اشترك بالقناة {CHANNEL_ID} قبل أي زيادة.",
         reply_markup=reply_markup
     )
 
@@ -58,7 +61,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(query.from_user.id)
 
     if not await is_subscribed(context.bot, user_id):
-        await query.edit_message_text(f"⚠️ لازم تشترك أولاً بالقناة: {CHANNEL_ID}")
+        await query.edit_message_text(f"⚠️ اشترك أولاً بالقناة: {CHANNEL_ID}")
         return
 
     last_time = users.get(user_id, {}).get("last_time")
@@ -71,7 +74,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-    await query.edit_message_text("✍️ أرسل رابط المنشور:")
+    await query.edit_message_text("✍️ أرسل رابط منشورك الجميل:")
     context.user_data['step'] = "link"
 
 # استقبال الرابط
@@ -93,7 +96,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         r = requests.post("https://kd1s.com/api/v2", data=data)
         res = r.json()
         if "order" in res:
-            await update.message.reply_text(f"✅ تم زيادة {DEFAULT_VIEWS} مشاهدة!\nرقم الطلب: {res['order']}")
+            await update.message.reply_text(f"😂✅ تم زيادة {DEFAULT_VIEWS} مشاهدة!\nرقم الطلب: {res['order']}")
             users[user_id]["last_time"] = datetime.now().isoformat()
             save_users()
         else:
@@ -103,7 +106,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data.pop('step', None)
 
-# تشغيل البوت
+# إنشاء التطبيق
 app_bot = Application.builder().token(BOT_TOKEN).build()
 app_bot.add_handler(CommandHandler("start", start))
 app_bot.add_handler(CallbackQueryHandler(button_handler))
